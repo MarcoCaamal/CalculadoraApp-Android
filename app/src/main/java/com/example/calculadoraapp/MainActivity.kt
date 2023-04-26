@@ -2,17 +2,22 @@ package com.example.calculadoraapp
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textview.MaterialTextView
 import java.io.Console
+import java.util.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var num1: Double = 0.0
     private var num2: Double = 0.0
     private var operacion: Int? = null;
+    private var tts: TextToSpeech? = null
 
     private lateinit var btnSumar: MaterialButton
     private lateinit var btnRestar: MaterialButton
@@ -35,9 +40,18 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+
         initComponents()
         initListeners()
 
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            tts!!.setLanguage(Locale("ES"))
+        } else {
+            findViewById<TextView>(R.id.tvResultado).text = "No disponible"
+        }
     }
 
     private fun initComponents() {
@@ -49,67 +63,28 @@ class MainActivity : AppCompatActivity() {
 
         this.tfNumero = findViewById(R.id.tfNumero)
         this.tvResultado = findViewById(R.id.tvResultado)
+
+        this.tts = TextToSpeech(this, this)
     }
 
     private fun initListeners() {
-        this.btnSumar.setOnClickListener() { sumar() }
-        this.btnRestar.setOnClickListener() { restar() }
-        this.btnProducto.setOnClickListener() { producto() }
-        this.btnDividir.setOnClickListener() { dividir() }
+        this.btnSumar.setOnClickListener() { realizarOperacion(SUMA) }
+        this.btnRestar.setOnClickListener() { realizarOperacion(RESTA) }
+        this.btnProducto.setOnClickListener() { realizarOperacion(PRODUCTO) }
+        this.btnDividir.setOnClickListener() { realizarOperacion(DIVISION) }
         this.btnCalcular.setOnClickListener() { calcular() }
     }
 
-    private fun sumar() {
-        val resultado = this.tfNumero.text.toString()
-
-        if(resultado.isNotEmpty()) {
-            this.num1 = resultado.toDouble()
-            this.operacion = SUMA
-            this.tfNumero.setText("")
-            this.activarCalcular()
-            this.desactivarOperaciones()
-            return
-        }
-
-        this.tvResultado.text = "Se debe ingresar un número"
+    private fun speak(message: String) {
+        this.tts!!.speak(message, TextToSpeech.QUEUE_FLUSH, null, "")
     }
 
-    private fun restar() {
+    private fun realizarOperacion(operacion: Int) {
+        this.operacion = operacion
+
         val resultado = this.tfNumero.text.toString()
-
-        if(resultado.isNotEmpty()) {
+        if (resultado.isNotEmpty()) {
             this.num1 = resultado.toDouble()
-            this.operacion = RESTA
-            this.tfNumero.setText("")
-            this.activarCalcular()
-            this.desactivarOperaciones()
-            return
-        }
-
-        this.tvResultado.text = "Se debe ingresar un número"
-    }
-
-    private fun producto() {
-        val resultado = this.tfNumero.text.toString()
-
-        if(resultado.isNotEmpty()) {
-            this.num1 = resultado.toDouble()
-            this.operacion = PRODUCTO
-            this.tfNumero.setText("")
-            this.activarCalcular()
-            this.desactivarOperaciones()
-            return
-        }
-
-        this.tvResultado.text = "Se debe ingresar un número"
-    }
-
-    private fun dividir() {
-        val resultado = this.tfNumero.text.toString()
-
-        if(resultado.isNotEmpty()) {
-            this.num1 = resultado.toDouble()
-            this.operacion = DIVISION
             this.tfNumero.setText("")
             this.activarCalcular()
             this.desactivarOperaciones()
@@ -120,41 +95,50 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun calcular() {
-        if(this.operacion == null) {
+        if (this.operacion == null) {
             return
         }
 
         val resultado = this.tfNumero.text.toString()
 
-        if(resultado.isNotEmpty()) {
+        if (resultado.isNotEmpty()) {
             this.num2 = resultado.toDouble()
+            var message = ""
 
-            when(this.operacion) {
+            when (this.operacion) {
                 0 -> {
-                    this.tvResultado.text = "El resultado es: ${this.num1 + this.num2}"
+                    message = "El resultado es: ${this.num1 + this.num2}"
+                    this.tvResultado.text = message
                     this.activarOperaciones()
                     this.desactivarCalcular()
                     this.tfNumero.setText("")
                 }
                 1 -> {
-                    this.tvResultado.text = "El resultado es: ${this.num1 - this.num2}"
+                    message = "El resultado es: ${this.num1 - this.num2}"
+                    this.tvResultado.text = message
                     this.activarOperaciones()
                     this.desactivarCalcular()
                     this.tfNumero.setText("")
                 }
                 2 -> {
-                    this.tvResultado.text = "El resultado es: ${this.num1 * this.num2}"
+                    message = "El resultado es: ${this.num1 * this.num2}"
+                    this.tvResultado.text = message
                     this.activarOperaciones()
                     this.desactivarCalcular()
                     this.tfNumero.setText("")
                 }
                 3 -> {
-                    this.tvResultado.text = "El resultado es: ${this.num1 / this.num2}"
+                    message = "El resultado es: ${this.num1 / this.num2}"
+                    this.tvResultado.text = message
                     this.activarOperaciones()
                     this.desactivarCalcular()
                     this.tfNumero.setText("")
                 }
+                else -> {
+                    message = "Hubo un error"
+                }
             }
+            speak(message)
         }
     }
 
@@ -179,4 +163,5 @@ class MainActivity : AppCompatActivity() {
     private fun desactivarCalcular() {
         this.btnCalcular.visibility = View.INVISIBLE
     }
+
 }
